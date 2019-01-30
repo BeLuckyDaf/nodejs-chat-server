@@ -87,10 +87,8 @@ function updateDatabase() {
 
 function receiveUserMessages(name) {
     let userIndex = clients.findIndex(val => val.name === name);
-    console.log(`userIndex: ${userIndex}`);
     if (userIndex === -1) return [];
     let messageIndex = messages.findIndex(val => val.id === clients[userIndex].lm);
-    console.log(`messageIndex: ${messageIndex}`);
     clients[userIndex].lm = getLastMessageId();
     if (messageIndex === -1) return messages;
     return messages.slice(messageIndex + 1, clients[userIndex].lm);
@@ -109,7 +107,7 @@ function kickInactive() {
     let last = -1;
     connections.forEach((val, i) => {
        if (now - val.time > timedOutTime) {
-           addMessage(`System`, `${val.name} has disconnected (timed out).`)
+           addMessage(`Server`, `'${val.name}' has disconnected (timed out).`)
        } else last = i;
     });
     if (last < 0) connections = [];
@@ -129,7 +127,7 @@ function isConnected(name) {
     return connections.findIndex(val => val.name === name) !== -1;
 }
 
-app.get('/addmessage', (req, res) => {
+app.post('/addmessage', (req, res) => {
     if (req.body.from && req.body.text && isConnected(req.body.from)) {
         let client = clients.find(value => value.name === req.body.from);
         if (client === undefined) res.status(400).send();
@@ -139,25 +137,25 @@ app.get('/addmessage', (req, res) => {
     } else res.status(400).send();
 });
 
-app.get('/update', (req, res) => {
+app.post('/update', (req, res) => {
     if (req.body.from && isConnected(req.body.from)) {
         updateConnection(req.body.from);
         res.status(200).json(receiveUserMessages(req.body.from));
     } else res.status(400).send();
 });
 
-app.get('/connect', (req, res) => {
+app.post('/connect', (req, res) => {
     if (req.body.from && !isConnected(req.body.from)) {
         if (clients.find(val => val.name === req.body.from) === undefined) addClient(req.body.from);
         updateConnection(req.body.from);
-        addMessage(`Server`, `${req.body.from} has joined the chat.`);
+        addMessage(`Server`, `'${req.body.from}' has joined the chat.`);
         res.status(200).json(receiveUserMessages(req.body.from));
     } else res.status(400).send();
 });
 
-app.get('/disconnect', (req, res) => {
+app.post('/disconnect', (req, res) => {
     if (req.body.from && isConnected(req.body.from) && disconnect(req.body.from)) {
-        addMessage(`Server`, `${req.body.from} has left.`);
+        addMessage(`Server`, `'${req.body.from}' has left.`);
         res.status(200).send();
     } else res.status(400).send();
 });
